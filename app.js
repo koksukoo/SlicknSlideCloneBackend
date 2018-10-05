@@ -2,6 +2,7 @@ var app = require('express')();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 var uuidv1 = require('uuid/v1');
+var faker = require('faker');
 
 var sessions = [];
 
@@ -10,7 +11,10 @@ function createSession(uuid) {
     isStarted: false,
     id: uuidv1(),
     players: [
-      { uuid: uuid },
+      {
+        uuid: uuid,
+        name: faker.name.firstName
+      },
     ],
     created: Date.now(),
   };
@@ -18,7 +22,7 @@ function createSession(uuid) {
   return session;
 }
 
-server.listen(80);
+server.listen(3000);
 
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.html');
@@ -30,7 +34,6 @@ io.on('connection', function (socket) {
       message: 'A player has disconnected',
     }});
   });
-  
   socket.on('game-join', function (data) {
     console.log(data);
     if (sessions.length) {
@@ -43,7 +46,7 @@ io.on('connection', function (socket) {
         socket.emit('game-joined', { data: { session }});
       } else {
         // if not add player to session
-        session.players.push({ uuid: data.uuid });
+        session.players.push({ uuid: data.uuid, name: faker.name.firstName });
         socket.emit('game-joined', { data: { session }});
         // if session full start the game
         if (session.players.length >= 4) {
@@ -56,6 +59,7 @@ io.on('connection', function (socket) {
           // listen position change events
           io.to(session.id).on('position', function(data) {
             // on position change emit that to clients
+            console.log(data);
             io.to(session.id).emit('position-change', { data: {
               uuid: data.uuid,
               x: data.x,
