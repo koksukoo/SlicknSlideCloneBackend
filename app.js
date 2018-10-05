@@ -1,12 +1,14 @@
 var app = require('express')();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
+var uuidv1 = require('uuid/v1');
 
 var sessions = [];
 
 function createSession(uuid) {
   var session = {
     isStarted: false,
+    id: uuidv1(),
     players: [
       { uuid: uuid },
     ],
@@ -43,6 +45,17 @@ io.on('connection', function (socket) {
           socket.emit('game-start', { data: {
             session: session,
           }});
+          // create new socket for started game
+          socket.join(session.id);
+          // listen position change events
+          io.to(session.id).on('position', function(data) {
+            // on position change emit that to clients
+            io.to(session.id).emit('position-change', { data: {
+              uuid: data.uuid,
+              x: data.x,
+              y: data.y,
+            }});
+          });
         }
       }
     } else {
