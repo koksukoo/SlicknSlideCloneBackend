@@ -2,9 +2,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
     <script>
         var socket = io.connect('http://localhost');
+        socket.emit('game-join', { uuid: 'unique user id' });
         socket.on('game-start', function (data) {
         console.log(data);
-        socket.emit('game-join', { my: 'unique user id' });
         });
     </script>
 </html>

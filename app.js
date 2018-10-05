@@ -25,8 +25,14 @@ app.get('/', function (req, res) {
 });
 
 io.on('connection', function (socket) {
-
+  socket.on('disconnect', function() {
+    socket.emit('disconnected', { data: {
+      message: 'A player has disconnected',
+    }});
+  });
+  
   socket.on('game-join', function (data) {
+    console.log(data);
     if (sessions.length) {
       // get last session
       var session = sessions[sessions.length - 1];
@@ -63,5 +69,6 @@ io.on('connection', function (socket) {
       var session = createSession(data.uuid);
       socket.emit('game-joined', { data: { session }});
     }
+    console.log(session);
   });
 });
