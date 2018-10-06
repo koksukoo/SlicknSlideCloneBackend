@@ -29,23 +29,23 @@ io.on('connection', function (socket) {
     car: 'motorbike'
   }
 
-  if (!clock) {
-    clock = 1;  
-    clockInterval = setInterval(() => {
-      clock--;
-      socket.emit('starting-in', clock);
-      socket.broadcast.emit('starting-in', clock);
-      if (clock <= 0) {
-        clearInterval(clockInterval);
-        clock = 0;
-        socket.emit('game-start');
-        socket.broadcast.emit('game-start');
-      }
-    }, 1000);
-  }
-  socket.emit('starting-in', clock);
-
-
+  socket.on('track-loaded', function(id) {
+    if (!clock) {
+      clock = 5;  
+      clockInterval = setInterval(() => {
+        clock--;
+        socket.emit('starting-in', clock);
+        socket.broadcast.emit('starting-in', clock);
+        if (clock <= 0) {
+          clearInterval(clockInterval);
+          clock = 0;
+          socket.emit('game-start');
+          socket.broadcast.emit('game-start');
+        }
+      }, 1000);
+    }
+    socket.emit('starting-in', clock);
+  })
 
   socket.emit('currentPlayers', players);
   socket.broadcast.emit('newPlayer', players[socket.id]);
