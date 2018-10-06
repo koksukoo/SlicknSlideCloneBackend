@@ -1,10 +1,10 @@
 var app = require('express')();
 var server = require('http').Server(app);
-var io = require('socket.io')(server);
+var io = require('socket.io').listen(server);
 var uuidv1 = require('uuid/v1');
 var faker = require('faker');
 
-var sessions = [];
+var players = {};
 
 function createSession(uuid) {
   var session = {
@@ -29,55 +29,31 @@ app.get('/', function (req, res) {
 });
 
 io.on('connection', function (socket) {
+  players[socket.id] = {
+    rotation: 0,
+    x: 0,
+    y: 0,
+    playerId: socket.id,
+    name: faker.name.firstName(),
+    car: 'motorbike'
+  }
+
+  socket.emit('currentPlayers', players);
+  socket.broadcast.emit('newPlayer', players[socket.id]);
+
   socket.on('disconnect', function() {
-    socket.emit('disconnected', { data: {
-      message: 'A player has disconnected',
-    }});
-  });
-  socket.on('game-join', function (data) {
+    delete players[socket.id];
+    io.emit('disconnect', socket.id)
+  })
+
+  socket.on('position', function(data) {
+    // on position change emit that to clients
     console.log(data);
-    console.log('trying to join');
-    if (sessions.length) {
-      // get last session
-      var session = sessions[sessions.length - 1];
-      // check if session is started
-      if (session.isStarted) {
-        // if session started create new session with user in it
-        console.log('session start');
-        session = createSession(data.uuid);
-        socket.emit('game-joined', { data: { session }});
-      } else {
-        // if not add player to session
-        console.log('joining session');
-        session.players.push({ uuid: data.uuid, name: faker.name.firstName() });
-        socket.emit('game-joined', { data: { session }});
-        // if session full start the game
-        if (session.players.length >= 4) {
-          sessions[sessions.length - 1].isStarted = true;
-          socket.emit('game-start', {
-            session: session,
-          });
-          // create new socket for started game
-          socket.join(session.id);
-          // listen position change events
-          socket.to(session.id).on('position', function(data) {
-            // on position change emit that to clients
-            console.log(data);
-            console.log('sending data');
-            io.to(session.id).emit('position-change', { data: {
-              uuid: data.uuid,
-              x: data.x,
-              y: data.y,
-            }});
-          });
-        }
-      }
-    } else {
-      // No sessions created, create one
-      console.log('create new session');
-      var session = createSession(data.uuid);
-      socket.emit('game-joined', { data: { session }});
-    }
-    console.log(session);
+    console.log('sending data');
+    socket.broadcast.emit('position-change', { data: {
+      uuid: socket.id,
+      x: data.x,
+      y: data.y,
+    }});
   });
 });
