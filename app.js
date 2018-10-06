@@ -7,25 +7,30 @@ var faker = require('faker');
 var players = {};
 var clock = null;
 var clockInterval = null;
+var stage = 1;
+var playerStarts = {
+  1: [{ x: 367, y: 80, angle: -180 }, { x: 390, y: 52, angle: -180 }, { x: 420, y: 52, angle: -180 }, { x: 420, y: 52, angle: -180 }, { x: 440, y: 52, angle: -180 }, { x: 4400, y: 52, angle: -180 }]
+}
 
 server.listen(80);
 
+ 
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.html');
 });
 
 io.on('connection', function (socket) {
   players[socket.id] = {
-    rotation: 0,
-    x: 0,
-    y: 0,
+    angle: (playerStarts[stage][Object.keys(players).length]) ? (playerStarts[stage][Object.keys(players).length].angle) : 0,
+    x: (playerStarts[stage][Object.keys(players).length]) ? (playerStarts[stage][Object.keys(players).length].x) : 0,
+    y: (playerStarts[stage][Object.keys(players).length]) ? (playerStarts[stage][Object.keys(players).length].y) : 0,
     playerId: socket.id,
     name: faker.name.firstName(),
     car: 'motorbike'
   }
 
   if (!clock) {
-    clock = 30;  
+    clock = 1;  
     clockInterval = setInterval(() => {
       clock--;
       socket.emit('starting-in', clock);
@@ -39,6 +44,8 @@ io.on('connection', function (socket) {
     }, 1000);
   }
   socket.emit('starting-in', clock);
+
+
 
   socket.emit('currentPlayers', players);
   socket.broadcast.emit('newPlayer', players[socket.id]);
@@ -57,4 +64,9 @@ io.on('connection', function (socket) {
       angle: data.angle
     });
   });
+
+  socket.on('player-starts', function(data) {
+    playerStarts = data;
+
+  })
 });
