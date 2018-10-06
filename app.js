@@ -48,12 +48,12 @@ io.on('connection', function (socket) {
 
   socket.on('position', function(data) {
     // on position change emit that to clients
-    console.log(data);
     console.log('sending data');
-    socket.broadcast.emit('position-change', { data: {
+    socket.broadcast.emit('position-change', { 
       uuid: socket.id,
       x: data.x,
       y: data.y,
-    }});
+      angle: data.angle
+    });
   });
 });
