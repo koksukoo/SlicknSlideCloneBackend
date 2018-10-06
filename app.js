@@ -5,22 +5,8 @@ var uuidv1 = require('uuid/v1');
 var faker = require('faker');
 
 var players = {};
-
-function createSession(uuid) {
-  var session = {
-    isStarted: false,
-    id: uuidv1(),
-    players: [
-      {
-        uuid: uuid,
-        name: faker.name.firstName()
-      },
-    ],
-    created: Date.now(),
-  };
-  sessions.push(session);
-  return session;
-}
+var clock = null;
+var clockInterval = null;
 
 server.listen(80);
 
@@ -38,6 +24,22 @@ io.on('connection', function (socket) {
     car: 'motorbike'
   }
 
+  if (!clock) {
+    clock = 30;  
+    clockInterval = setInterval(() => {
+      clock--;
+      socket.emit('starting-in', clock);
+      socket.broadcast.emit('starting-in', clock);
+      if (clock <= 0) {
+        clearInterval(clockInterval);
+        clock = 0;
+        socket.emit('game-start');
+        socket.broadcast.emit('game-start');
+      }
+    }, 1000);
+  }
+  socket.emit('starting-in', clock);
+
   socket.emit('currentPlayers', players);
   socket.broadcast.emit('newPlayer', players[socket.id]);
 
@@ -48,7 +50,6 @@ io.on('connection', function (socket) {
 
   socket.on('position', function(data) {
     // on position change emit that to clients
-    console.log('sending data');
     socket.broadcast.emit('position-change', { 
       uuid: socket.id,
       x: data.x,
