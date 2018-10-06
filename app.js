@@ -13,7 +13,7 @@ function createSession(uuid) {
     players: [
       {
         uuid: uuid,
-        name: faker.name.firstName
+        name: faker.name.firstName()
       },
     ],
     created: Date.now(),
@@ -22,7 +22,7 @@ function createSession(uuid) {
   return session;
 }
 
-server.listen(3000);
+server.listen(80);
 
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.html');
@@ -49,7 +49,7 @@ io.on('connection', function (socket) {
       } else {
         // if not add player to session
         console.log('joining session');
-        session.players.push({ uuid: data.uuid, name: faker.name.firstName });
+        session.players.push({ uuid: data.uuid, name: faker.name.firstName() });
         socket.emit('game-joined', { data: { session }});
         // if session full start the game
         if (session.players.length >= 4) {
